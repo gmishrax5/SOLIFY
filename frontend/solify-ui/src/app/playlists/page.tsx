@@ -2,39 +2,144 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { SystemProgram } from '@solana/web3.js';
 import NavBar from '@/components/NavBar';
+import { useSolifyProgram, findUserProfilePDA, findPlaylistPDA } from '@/utils/solana';
+
+interface Playlist {
+  id: string;
+  name: string;
+  trackCount: number;
+  owner: string;
+  pubkey?: string;
+}
 
 export default function PlaylistsPage() {
   const { publicKey, connected } = useWallet();
   const [playlistName, setPlaylistName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [playlists, setPlaylists] = useState([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [error, setError] = useState('');
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  
+  // Get the Solify program
+  const program = useSolifyProgram();
 
-  // This would fetch the user's playlists from the blockchain
+  // Fetch user's playlists from the blockchain
   useEffect(() => {
-    if (connected && publicKey) {
-      // Here we would fetch the user's playlists from the blockchain
-      // For now, we'll just simulate it
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        // Simulate empty playlists
-        setPlaylists([]);
-      }, 1000);
+    if (connected && publicKey && program) {
+      const fetchPlaylists = async () => {
+        try {
+          setIsLoading(true);
+          setError('');
+          
+          // First, find the user profile PDA
+          const [userProfilePda] = await findUserProfilePDA(publicKey);
+          
+          // Check if user profile exists
+          try {
+            // Fetch user profile to verify it exists
+            await program.account.userProfile.fetch(userProfilePda);
+            
+            // Get all program accounts of type Playlist
+            const playlistAccounts = await program.account.playlist.all([
+              {
+                memcmp: {
+                  offset: 8, // After discriminator
+                  bytes: publicKey.toBase58()
+                }
+              }
+            ]);
+            
+            // Map the accounts to our Playlist interface
+            const userPlaylists = playlistAccounts.map(account => ({
+              id: account.publicKey.toString(),
+              pubkey: account.publicKey.toString(),
+              name: account.account.name,
+              trackCount: account.account.trackCount.toNumber(),
+              owner: account.account.owner.toString()
+            }));
+            
+            setPlaylists(userPlaylists);
+          } catch (err) {
+            console.log('No user profile found or error fetching playlists:', err);
+            setPlaylists([]);
+          }
+        } catch (err) {
+          console.error('Error fetching playlists:', err);
+          setError('Failed to load playlists. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchPlaylists();
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, program]);
 
   const handleCreatePlaylist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!playlistName.trim()) return;
+    if (!playlistName.trim() || !publicKey || !program) {
+      console.log('Missing requirements to create playlist:', { 
+        name: !!playlistName.trim(), 
+        publicKey: !!publicKey, 
+        program: !!program 
+      });
+      return;
+    }
     
     setIsLoading(true);
-    // Here we would call the create_playlist instruction
-    // For now, we'll just simulate it
-    setTimeout(() => {
-      setIsLoading(false);
+    setError('');
+    
+    try {
+      // First, find the user profile PDA
+      const [userProfilePda] = await findUserProfilePDA(publicKey);
+      
+      // Check if user profile exists
+      try {
+        await program.account.userProfile.fetch(userProfilePda);
+      } catch (err) {
+        setError('You need to create a profile first');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Find the playlist PDA
+      const [playlistPda] = await findPlaylistPDA(publicKey, playlistName);
+      
+      console.log('Creating playlist:', playlistName);
+      console.log('Playlist PDA:', playlistPda.toString());
+      
+      // Call the create_playlist instruction
+      const tx = await program.methods
+        .createPlaylist(playlistName)
+        .accounts({
+          authority: publicKey,
+          userProfile: userProfilePda,
+          playlist: playlistPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+      
+      console.log('Transaction signature:', tx);
+      console.log('Waiting for confirmation...');
+      
+      // Wait for confirmation
+      await program.provider.connection.confirmTransaction(tx);
+      
+      console.log('Playlist created successfully!');
+      
+      // Add the new playlist to the list
+      const newPlaylist = {
+        id: playlistPda.toString(),
+        pubkey: playlistPda.toString(),
+        name: playlistName,
+        trackCount: 0,
+        owner: publicKey.toString()
+      };
+      
+      setPlaylists([...playlists, newPlaylist]);
       setIsSuccess(true);
       setPlaylistName('');
       
@@ -42,18 +147,12 @@ export default function PlaylistsPage() {
       setTimeout(() => {
         setIsSuccess(false);
       }, 5000);
-      
-      // Add the new playlist to the list
-      setPlaylists([
-        ...playlists,
-        {
-          id: Date.now().toString(),
-          name: playlistName,
-          trackCount: 0,
-          owner: publicKey.toString()
-        }
-      ]);
-    }, 1500);
+    } catch (err) {
+      console.error('Error creating playlist:', err);
+      setError('Failed to create playlist: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!connected) {
@@ -79,6 +178,12 @@ export default function PlaylistsPage() {
         {isSuccess && (
           <div className="bg-green-800 text-white p-4 rounded-lg mb-6">
             Playlist created successfully!
+          </div>
+        )}
+        
+        {error && (
+          <div className="bg-red-800 text-white p-4 rounded-lg mb-6">
+            {error}
           </div>
         )}
         
