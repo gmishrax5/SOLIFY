@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { SystemProgram } from '@solana/web3.js';
 import NavBar from '@/components/NavBar';
+import { useSolifyProgram, findUserProfilePDA } from '@/utils/solana';
 
 export default function ProfilePage() {
   const { publicKey, connected } = useWallet();
@@ -11,31 +13,68 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [userTracks, setUserTracks] = useState([]);
 
-  // This would fetch the user profile from the blockchain
+  // Import the Solify program hook
+  const program = useSolifyProgram();
+
+  // Fetch the user profile from the blockchain
   useEffect(() => {
-    if (connected && publicKey) {
-      // Here we would fetch the user profile from the blockchain
-      // For now, we'll just simulate it
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        // Simulate profile not found
-        setIsInitialized(false);
-      }, 1000);
+    if (connected && publicKey && program) {
+      const fetchUserProfile = async () => {
+        try {
+          setIsLoading(true);
+          // Find the user profile PDA
+          const [userProfilePda] = await findUserProfilePDA(publicKey);
+          
+          // Fetch the user profile account
+          const userProfile = await program.account.userProfile.fetch(userProfilePda);
+          
+          // Update state with user data
+          setUsername(userProfile.username);
+          setIsInitialized(true);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          setIsInitialized(false);
+          setIsLoading(false);
+        }
+      };
+      
+      fetchUserProfile();
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, program]);
 
   const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    if (!username.trim() || !publicKey || !program) return;
     
     setIsLoading(true);
-    // Here we would call the init_user_profile instruction
-    // For now, we'll just simulate it
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Find the user profile PDA
+      const [userProfilePda] = await findUserProfilePDA(publicKey);
+      
+      // Call the init_user_profile instruction
+      const tx = await program.methods
+        .initUserProfile(username)
+        .accounts({
+          authority: publicKey,
+          userProfile: userProfilePda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+      
+      console.log('Transaction signature:', tx);
+      
+      // Wait for confirmation
+      await program.provider.connection.confirmTransaction(tx);
+      
+      // Update state
       setIsInitialized(true);
-    }, 1500);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      setIsLoading(false);
+      alert('Failed to create profile. See console for details.');
+    }
   };
 
   if (!connected) {
