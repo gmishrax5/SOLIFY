@@ -16,7 +16,14 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Handle Next.js routes
 [[redirects]]
   from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Fallback for API routes and other dynamic paths
+[[redirects]]
+  from = "/api/*"
   to = "/.netlify/functions/next"
   status = 200

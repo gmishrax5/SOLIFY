@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Add static export options for Netlify
+  output: 'export',
+  distDir: '.next',
+  images: {
+    unoptimized: true,
+  },
   // Disable React strict mode to avoid double rendering in development
   reactStrictMode: false,
   // Suppress hydration errors in development
@@ -39,6 +45,12 @@ const nextConfig = {
         },
       };
     }
+    
+    config.resolve.fallback = {
+      fs: false,
+      path: false,
+      os: false,
+    };
     
     return config;
   },
