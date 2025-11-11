@@ -1,6 +1,11 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  base = "frontend/solify-ui"
+
+  [functions]
+  directory = "netlify/functions"
+    
 
 [build.environment]
   NEXT_PUBLIC_HELIUS_RPC = "https://api.devnet.solana.com"
