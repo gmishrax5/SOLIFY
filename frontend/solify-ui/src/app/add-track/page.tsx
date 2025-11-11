@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, ChangeEvent } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { SystemProgram } from '@solana/web3.js';
 import NavBar from '@/components/NavBar';
@@ -13,10 +13,90 @@ export default function AddTrackPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Get the Solify program
   const program = useSolifyProgram();
 
+  // Handle file selection
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check if file is an audio file
+    if (!file.type.startsWith('audio/')) {
+      setError('Please upload an audio file (MP3, WAV, etc.)');
+      return;
+    }
+    
+    await uploadFile(file);
+  };
+  
+  // Handle file drop
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    
+    // Check if file is an audio file
+    if (!file.type.startsWith('audio/')) {
+      setError('Please upload an audio file (MP3, WAV, etc.)');
+      return;
+    }
+    
+    await uploadFile(file);
+  };
+  
+  // Handle drag events
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  
+  // Simulate file upload to a hosting service
+  const uploadFile = async (file: File) => {
+    setIsLoading(true);
+    setError('');
+    setUploadProgress(0);
+    
+    try {
+      // In a real app, you would upload to IPFS, Arweave, or another storage service
+      // For this demo, we'll simulate an upload and generate a fake URI
+      
+      // Simulate upload progress
+      const totalSteps = 10;
+      for (let i = 1; i <= totalSteps; i++) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        setUploadProgress(Math.floor((i / totalSteps) * 100));
+      }
+      
+      // Generate a fake URI - in a real app, this would be the IPFS/Arweave URI
+      const fakeUri = `https://example.com/audio/${Date.now()}-${file.name}`;
+      setUri(fakeUri);
+      
+      // Set the title to the filename if not already set
+      if (!title) {
+        const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+        setTitle(fileName);
+      }
+      
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setError('Failed to upload file. Please try again.');
+      setIsLoading(false);
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !uri.trim() || !publicKey || !program) {
@@ -143,21 +223,58 @@ export default function AddTrackPage() {
             </div>
             
             <div className="mb-6">
-              <label htmlFor="uri" className="block text-sm font-medium mb-1">
-                Track URI
+              <label htmlFor="audio-file" className="block text-sm font-medium mb-1">
+                Audio File
               </label>
+              <div
+                className={`w-full h-32 border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                  isDragging ? 'border-purple-500 bg-purple-900/20' : 'border-gray-600 bg-gray-700/30'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uri ? (
+                  <div className="text-center">
+                    <p className="text-green-400 mb-1">✓ File uploaded successfully</p>
+                    <p className="text-sm text-gray-300 truncate max-w-xs">{uri.split('/').pop()}</p>
+                  </div>
+                ) : uploadProgress > 0 && uploadProgress < 100 ? (
+                  <div className="w-3/4">
+                    <div className="h-2 bg-gray-600 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-purple-500" 
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-center mt-2 text-sm">Uploading... {uploadProgress}%</p>
+                  </div>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                    </svg>
+                    <p className="text-sm text-gray-400">Drag and drop your audio file here, or click to browse</p>
+                  </>
+                )}
+              </div>
               <input
-                type="url"
+                ref={fileInputRef}
+                type="file"
+                id="audio-file"
+                accept="audio/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <input
+                type="hidden"
                 id="uri"
                 value={uri}
-                onChange={(e) => setUri(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="https://example.com/your-track.mp3"
-                maxLength={200}
                 required
               />
               <p className="mt-1 text-xs text-gray-400">
-                Link to your audio file (MP3, WAV, etc.) hosted on a service like SoundCloud, IPFS, or any other hosting provider.
+                Supported formats: MP3, WAV, OGG, etc. (Max size: 10MB)
               </p>
             </div>
             
