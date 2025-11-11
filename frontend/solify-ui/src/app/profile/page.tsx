@@ -19,40 +19,66 @@ export default function ProfilePage() {
   // Fetch the user profile from the blockchain
   useEffect(() => {
     if (connected && publicKey && program) {
+      console.log('Attempting to fetch user profile...');
       const fetchUserProfile = async () => {
         try {
           setIsLoading(true);
           // Find the user profile PDA
           const [userProfilePda] = await findUserProfilePDA(publicKey);
+          console.log('User profile PDA:', userProfilePda.toString());
           
-          // Fetch the user profile account
-          const userProfile = await program.account.userProfile.fetch(userProfilePda);
-          
-          // Update state with user data
-          setUsername(userProfile.username);
-          setIsInitialized(true);
-          setIsLoading(false);
+          try {
+            // Fetch the user profile account
+            console.log('Fetching user profile...');
+            const userProfile = await program.account.userProfile.fetch(userProfilePda);
+            console.log('User profile found:', userProfile);
+            
+            // Update state with user data
+            setUsername(userProfile.username);
+            setIsInitialized(true);
+          } catch (fetchError) {
+            console.log('User profile not found, user needs to create one:', fetchError.message);
+            setIsInitialized(false);
+          }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('Error in profile fetch process:', error);
           setIsInitialized(false);
+        } finally {
           setIsLoading(false);
         }
       };
       
       fetchUserProfile();
+    } else {
+      console.log('Missing requirements to fetch profile:', { 
+        connected, 
+        publicKey: publicKey?.toString(), 
+        programAvailable: !!program 
+      });
     }
   }, [connected, publicKey, program]);
 
   const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !publicKey || !program) return;
+    if (!username.trim() || !publicKey || !program) {
+      console.log('Missing requirements to create profile:', { 
+        username: !!username.trim(), 
+        publicKey: !!publicKey, 
+        program: !!program 
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
+      console.log('Creating user profile with username:', username);
+      
       // Find the user profile PDA
       const [userProfilePda] = await findUserProfilePDA(publicKey);
+      console.log('User profile PDA:', userProfilePda.toString());
       
       // Call the init_user_profile instruction
+      console.log('Calling initUserProfile instruction...');
       const tx = await program.methods
         .initUserProfile(username)
         .accounts({
@@ -63,17 +89,20 @@ export default function ProfilePage() {
         .rpc();
       
       console.log('Transaction signature:', tx);
+      console.log('Transaction submitted, waiting for confirmation...');
       
       // Wait for confirmation
-      await program.provider.connection.confirmTransaction(tx);
+      const confirmation = await program.provider.connection.confirmTransaction(tx);
+      console.log('Transaction confirmed:', confirmation);
       
       // Update state
+      console.log('Profile created successfully!');
       setIsInitialized(true);
       setIsLoading(false);
     } catch (error) {
       console.error('Error creating profile:', error);
       setIsLoading(false);
-      alert('Failed to create profile. See console for details.');
+      alert('Failed to create profile: ' + (error.message || 'Unknown error. See console for details.'));
     }
   };
 

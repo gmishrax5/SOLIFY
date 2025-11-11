@@ -19,50 +19,74 @@ export default function AddTrackPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !uri.trim() || !publicKey || !program) return;
+    if (!title.trim() || !uri.trim() || !publicKey || !program) {
+      console.log('Missing requirements to add track:', { 
+        title: !!title.trim(), 
+        uri: !!uri.trim(),
+        publicKey: !!publicKey, 
+        program: !!program 
+      });
+      return;
+    }
     
     setIsLoading(true);
     setError('');
     
     try {
+      console.log('Adding track with title:', title, 'and URI:', uri);
+      
       // Find the user profile PDA
       const [userProfilePda] = await findUserProfilePDA(publicKey);
+      console.log('User profile PDA:', userProfilePda.toString());
       
-      // Fetch the user profile to get the track count
-      const userProfile = await program.account.userProfile.fetch(userProfilePda);
-      const trackCount = userProfile.trackCount.toNumber();
-      
-      // Find the track PDA
-      const [trackPda] = await findTrackPDA(publicKey, trackCount);
-      
-      // Call the add_track instruction
-      const tx = await program.methods
-        .addTrack(uri, title)
-        .accounts({
-          authority: publicKey,
-          userProfile: userProfilePda,
-          track: trackPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
-      
-      console.log('Transaction signature:', tx);
-      
-      // Wait for confirmation
-      await program.provider.connection.confirmTransaction(tx);
-      
-      // Update state
-      setIsSuccess(true);
-      setTitle('');
-      setUri('');
-      
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setIsSuccess(false);
-      }, 5000);
+      try {
+        // Fetch the user profile to get the track count
+        console.log('Fetching user profile...');
+        const userProfile = await program.account.userProfile.fetch(userProfilePda);
+        console.log('User profile found:', userProfile);
+        const trackCount = userProfile.trackCount.toNumber();
+        console.log('Current track count:', trackCount);
+        
+        // Find the track PDA
+        const [trackPda] = await findTrackPDA(publicKey, trackCount);
+        console.log('Track PDA:', trackPda.toString());
+        
+        // Call the add_track instruction
+        console.log('Calling addTrack instruction...');
+        const tx = await program.methods
+          .addTrack(uri, title)
+          .accounts({
+            authority: publicKey,
+            userProfile: userProfilePda,
+            track: trackPda,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+        
+        console.log('Transaction signature:', tx);
+        console.log('Transaction submitted, waiting for confirmation...');
+        
+        // Wait for confirmation
+        const confirmation = await program.provider.connection.confirmTransaction(tx);
+        console.log('Transaction confirmed:', confirmation);
+        
+        // Update state
+        console.log('Track added successfully!');
+        setIsSuccess(true);
+        setTitle('');
+        setUri('');
+        
+        // Reset success message after 5 seconds
+        setTimeout(() => {
+          setIsSuccess(false);
+        }, 5000);
+      } catch (profileError) {
+        console.error('Error with user profile:', profileError);
+        setError('User profile not found. Please create a profile first.');
+      }
     } catch (err) {
       console.error('Error adding track:', err);
-      setError('Failed to add track. Make sure you have a user profile and enough SOL.');
+      setError('Failed to add track: ' + (err.message || 'Unknown error. See console for details.'));
     } finally {
       setIsLoading(false);
     }

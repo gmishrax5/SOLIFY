@@ -35,24 +35,37 @@ export function useSolifyProgram() {
 
   useEffect(() => {
     if (!anchorWallet) {
+      console.log('No wallet connected');
       setProgram(null);
       return;
     }
 
+    console.log('Wallet connected:', anchorWallet.publicKey.toString());
+    
     // Create a connection to the Solana cluster
-    const connection = new Connection(getRpcUrl(), getCommitment());
+    const rpcUrl = getRpcUrl();
+    console.log('Using RPC URL:', rpcUrl);
+    const commitment = getCommitment();
+    console.log('Using commitment:', commitment);
+    
+    const connection = new Connection(rpcUrl, commitment);
 
     // Create a provider
     const provider = new AnchorProvider(
       connection,
       anchorWallet,
-      { preflightCommitment: getCommitment() }
+      { preflightCommitment: commitment }
     );
 
     // Create a program with the imported IDL
     try {
+      const programId = getProgramId();
+      console.log('Program ID:', programId.toString());
+      console.log('IDL:', idl.metadata ? idl.metadata.address : 'No metadata address');
+      
       // @ts-ignore - Ignore type errors for deployment
-      const solifyProgram = new Program(idl, getProgramId(), provider);
+      const solifyProgram = new Program(idl, programId, provider);
+      console.log('Program created successfully');
       setProgram(solifyProgram);
     } catch (error) {
       console.error("Error creating program:", error);
