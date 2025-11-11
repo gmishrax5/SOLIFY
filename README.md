@@ -1,10 +1,105 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/TzDKD5h9)
-![School of Solana](https://github.com/Ackee-Blockchain/school-of-solana/blob/master/.banner/banner.png?raw=true)
+# 🎵 SOLIFY : Decentralized Music Platform on Solana
 
-## 📚Solana Program
-We are about halfway through the course, and you already have some experience with programming on Solana. It is time to create something on your own! You will be building a dApp that will serve as the culmination of everything you have learned so far. Feel free to implement whatever comes to your mind, (as long as it passes the requirements).
+![Solify Banner](https://i.imgur.com/placeholder.png)
 
-**This does not mean that the School of Solana is coming to an end just yet!** There are still several exciting lectures ahead, as well as one security related task.
+## 🚀 Project Overview
+
+**Solify** is a revolutionary decentralized music platform built on the Solana blockchain that empowers artists and listeners to connect directly without intermediaries. Think of it as a decentralized Spotify where artists own their content, listeners discover new music, and everyone participates in a transparent ecosystem.
+
+### ✨ Key Features
+
+- **🎧 Share Music**: Upload and share your tracks with the world
+- **👤 User Profiles**: Create your unique artist or listener profile
+- **📝 Track Management**: Add, manage, and share your music catalog
+- **📋 Playlists**: Create and share curated playlists with the community
+- **❤️ Like System**: Show appreciation for tracks you enjoy
+- **⚡ Lightning Fast**: Built on Solana for near-instant transactions and minimal fees
+
+## 🔍 How Solify Works
+
+Solify leverages the power of Solana's high-performance blockchain to create a seamless music sharing experience:
+
+1. **Create a Profile**: Connect your Solana wallet and create your unique username
+2. **Share Your Music**: Add tracks with title and URI (linking to your hosted audio)
+3. **Discover**: Browse tracks from other artists in the ecosystem
+4. **Curate**: Create playlists to organize your favorite tracks
+5. **Engage**: Like tracks to show appreciation and help others discover great music
+
+## 🏗️ Architecture
+
+Solify is built with a modern tech stack:
+
+- **Backend**: Solana blockchain with Anchor framework
+- **Frontend**: Next.js, React, TypeScript, and TailwindCSS
+- **Wallet Integration**: Solana Wallet Adapter supporting Phantom, Solflare, and more
+
+### Smart Contract Design
+
+The platform uses Program Derived Addresses (PDAs) to efficiently store and retrieve data:
+
+- **User Profiles**: Store user information and track counts
+- **Tracks**: Store track metadata including URI, title, and like count
+- **Playlists**: Manage collections of tracks
+- **Playlist Items**: Link tracks to playlists
+- **Likes**: Track user appreciation
+
+## 📁 Repository Structure
+
+- **`/anchor_project/solify/`**: Solana program code written with Anchor framework
+- **`/frontend/solify-ui/`**: Next.js frontend application
+- **`/PROJECT_DESCRIPTION.md`**: Detailed project description and implementation details
+- **`/DEPLOYMENT_GUIDE.md`**: Instructions for deploying the application
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 16+ and npm
+- Rust and Cargo (for Anchor development)
+- Solana CLI tools
+- A Solana wallet (Phantom, Solflare, etc.)
+
+### Local Development
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/solify.git
+   cd solify
+   ```
+
+2. Set up the Anchor project:
+   ```bash
+   cd anchor_project/solify
+   npm install
+   ```
+
+3. Set up the frontend:
+   ```bash
+   cd frontend/solify-ui
+   npm install
+   npm run dev
+   ```
+
+## 🌐 Deployment
+
+See the [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
+
+## 🧪 Testing
+
+The Anchor program includes comprehensive tests for all instructions:
+
+```bash
+cd anchor_project/solify
+anchor test
+```
+
+## 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+## Original Assignment Details
 
 ### Task details
 This task consists of two parts:
@@ -17,79 +112,9 @@ This task consists of two parts:
 - An Anchor program deployed on **Devnet** or **Mainnet**.
 - The Anchor program must use a PDA (Program Derived Address).
 - At least one TypeScript **test** for each Anchor program instruction. These tests should cover both **happy** and **unhappy** (intentional error-triggering) scenarios.
-- A simple **frontend** deployed using your preferred provider (for more info, check below).
+- A simple **frontend** deployed using your preferred provider.
 - A filled out **PROJECT_DESCRIPTION.md** file.
 
-### Ideas
-We highly recommend starting with something simple. Take time to think through your project and work on it in iterations. Do not try to implement everything at once!
+---
 
-Below is a list of few ideas to get you started:
-- **Social app**
-    - Instagram
-    - Giphy
-    - Friendtech
-    - Spotify
-- **Blog**
-- **Voting** ([D21 - Janeček method](https://www.ih21.org/en/guidelines))
-- **DeFi**
-    - Raffles
-    - Escrow
-    - Tipping
-    - Lending ([Save Documentation](https://docs.save.finance/))
-    - Liquid Staking ([Marinade Documentation](https://docs.marinade.finance/))
-    - Data Query with Pyth ([Pyth Documentation](https://docs.pyth.network/price-feeds))
-    - AMM ([Raydium Documentation](https://raydium.gitbook.io/raydium/))
-- **Gaming**
-    - Browser Game ([Gaming on Solana](https://solanacookbook.com/gaming/nfts-in-games.html#nfts-in-games))
-
-### Deadline
-The deadline for this task is **Wednesday, November 19th, at 23:59 UTC**.
->[!CAUTION]
->Note that we will not accept submissions after the deadline.
-
-### Submission
-There are two folders, one for the Anchor project, and one for the frontend. Push your changes to the **main** branch of **this** repository.
-
->[!IMPORTANT]
->It is essential that you fill out the `PROJECT_DESCRIPTION.md` template completely and accurately. This document will be used by AI for the initial evaluation, so provide detailed information about your project, including working links, clear descriptions, and technical implementation details.
-
->[!NOTE]
->Your submission repository is public. Feel free to share the link to showcase your work!
-
-### Evaluation
-The evaluation process is based on the **requirements**. If you meet the requirements, you pass the task!
-
->[!NOTE]
->The first round of evaluations will be conducted by AI to verify requirements before manual review. AI can make mistakes. If you believe you fulfilled all requirements but weren't graded correctly, please create a support ticket and we will resolve the issue.
-
->[!CAUTION]
->We expect original work that demonstrates your understanding and creativity. While you may draw inspiration from examples covered in lessons and tasks, **direct copying is not acceptable**. If you choose to build upon an example from the School of Solana materials, you must significantly expand it with additional features, instructions, and functionality to showcase your learning progress. 
-
-### Example Workflow
-Let's say you are going to implement the Twitter dApp as the Solana Program. Here's how the steps could look:
-
-**1.** Implement Twitter dApp using the Anchor framework.
-
-**2.** Test the Twitter dApp using the Anchor framework.
-
-**3.** Deploy the Twitter dApp on the Solana Devnet.
-
-**4.** Using the create solana dapp template, implement frontend for the Twitter dApp.
-
-**5.** Publish Frontend using [Vercel](https://vercel.com). Ensure the deployment is publicly accessible.
-
-**6.** Fill out the PROJECT_DESCRIPTION.md template.
-
-**7.** Submit the Twitter dApp using GitHub Classroom.
-
-### Useful Links
-- [Vercel](https://vercel.com)
-- [Create Solana Dapp](https://github.com/solana-foundation/create-solana-dapp)
-- [Account Macro Constraints](https://docs.rs/anchor-lang/0.31.1/anchor_lang/derive.Accounts.html)
-- [Solana Developers Courses](https://solana.com/developers/courses)
-
------
-
-### Need help?
->[!TIP]
->If you have any questions, feel free to reach out to us on [Discord](https://discord.gg/z3JVuZyFnp).
+Built with ❤️ for the School of Solana
